@@ -8,7 +8,7 @@ User = get_user_model()
 
 class Review(models.Model):
     """Отзывы"""
-    #user = models.ForeignKey(
+    # user = models.ForeignKey(
     #    'auth.User',
     #    on_delete=models.CASCADE,
     #    related_name='reviews',
