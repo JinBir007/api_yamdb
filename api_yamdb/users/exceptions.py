@@ -1,6 +1,6 @@
-"""api/exceptions.py
+"""users/exceptions.py
 
-Исключения.
+Исключения для приложения users.
 """
 
 from rest_framework import status
