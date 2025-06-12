@@ -1,39 +1,28 @@
-from rest_framework import mixins, status
-from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet, GenericViewSet, ViewSet
+"""users/views.py
+
+Viewsets для приложения users.
+"""
+
+from django.http import request
+from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet, ViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 
-from .serializers import (ReviewSerializer,
-                          CommentSerializer,
-                          ConfirmationSerializer,
-                          UserRegistrationSerializer)
-from ..reviews.models import Review, Comment, EmailConfirmation
 from .exceptions import WrongUsernameOrToken
+from .models import EmailConfirmation
+from .serializers import ConfirmationSerializer, UserRegistrationSerializer
 from .utils import send_confirmation_email
 
 User = get_user_model()
 
 
-class ReviewViewSet(ModelViewSet):
-    """ViewSet для модели Review"""""
-    queryset = Review.objects.all()
-    serializer_class = ReviewSerializer
-    http_method_names = ('get', 'post', 'patch', 'delete')
-
-
-class CommentViewSet(ModelViewSet):
-    """ViewSet для модели Comment"""
-    queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
-    http_method_names = ('get', 'post', 'patch', 'delete')
-
-
-# Классы для авторизации и работы с пользователями: начало
-
-class UserRegistrationViewSet(mixins.CreateModelMixin, ViewSet, GenericViewSet):
+class UserRegistrationViewSet(mixins.CreateModelMixin,
+                              GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserRegistrationSerializer
 
@@ -72,5 +61,3 @@ class RegistrationConfirmation(APIView):
             refresh = RefreshToken.for_user(user)
             return Response({'token': str(refresh.access_token)},
                             status=status.HTTP_200_OK)
-
-# Классы для авторизации и работы с пользователями: конец
