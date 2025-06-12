@@ -37,7 +37,7 @@ class ApiUser(AbstractUser):
 
 
 class EmailConfirmation(models.Model):
-    """Модель кода подтверждения электронной почты."""
+    """Модель для кода подтверждения электронной почты."""
 
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
