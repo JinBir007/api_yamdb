@@ -34,7 +34,7 @@ class Review(BaseModel):
         ordering = ('-pub_date',)
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
-        constraints = [
+        validators = [
             models.UniqueConstraint(
                 fields=['author', 'title_id'],
                 name='review_author')

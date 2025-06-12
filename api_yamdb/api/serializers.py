@@ -1,5 +1,7 @@
 from rest_framework.serializers import ModelSerializer
-from .models import Review, Comment
+from rest_framework.validators import UniqueTogetherValidator
+
+from ..reviews.models import Review, Comment
 
 
 class ReviewSerializer(ModelSerializer):
@@ -7,11 +9,13 @@ class ReviewSerializer(ModelSerializer):
     class Meta:
         model = Review
         fields = '__all__'
-
-    def validate(self, attrs):
-        """Валидация данных"""
-        # TODO: добавить проверку на повторную подписку на основе связей БД
-        return attrs
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Review.objects.all(),
+                fields=['title', 'author'],
+                message='Вы уже оставляли отзыв на данное произведение'
+            )
+        ]
 
 
 class CommentSerializer(ModelSerializer):
