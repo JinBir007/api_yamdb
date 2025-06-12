@@ -20,3 +20,25 @@ extra_patterns = [
 urlpatterns = [
     path('v1/', include(extra_patterns)),
 ]
+
+
+
+# /auth/signup/ - Получение confirmation code по имени и почте
+# Должна быть возможность повторного запроса кода подтверждения.
+
+# /auth/token/ - Получение JWT-токена в обмен на username и confirmation code
+
+# /users/me/ - PATCH-запрос на заполнение полей в профиле, GET - на получение данных о себе. Любой авторизованный пользователь
+# /users/ - GET на получение списка всех пользователей. Администратор.
+# POST - Добавить нового пользователя. Права доступа: Администратор Поля email и username должны быть уникальными.
+
+# /users/{username}/ - GET, POST, PATCH только для админа
+
+# {
+#   "username": "zr8VRG.0DB061iHkAroEZahED3JgR-mO-SF71jJHe36iVrCg0K@1j3ZoKAcqlHZ",
+#   "email": "user@example.com",
+#   "first_name": "string",
+#   "last_name": "string",
+#   "bio": "string",
+#   "role": "user"
+# }

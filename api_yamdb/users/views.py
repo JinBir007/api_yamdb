@@ -21,7 +21,8 @@ from .utils import send_confirmation_email
 User = get_user_model()
 
 
-class UserRegistrationViewSet(mixins.CreateModelMixin, ViewSet, GenericViewSet):
+class UserRegistrationViewSet(mixins.CreateModelMixin,
+                              GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserRegistrationSerializer
 
@@ -38,7 +39,6 @@ class UserRegistrationViewSet(mixins.CreateModelMixin, ViewSet, GenericViewSet):
             user=user)
         confirmation_code = confirmation_object.id
         send_confirmation_email(user, confirmation_code, email)
-        # return super().perform_create(serializer)
 
 
 class RegistrationConfirmation(APIView):
