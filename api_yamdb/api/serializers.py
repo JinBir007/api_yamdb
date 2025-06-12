@@ -1,4 +1,6 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Avg
+
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from rest_framework.validators import UniqueTogetherValidator
@@ -30,23 +32,35 @@ class CommentSerializer(ModelSerializer):
         fields = '__all__'
 
 
-# Сериализаторы для авторизации и работы с пользователями: начало
+class CategorySerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Category."""
 
-class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = ('username', 'email')
-
-    def validate_username(self, value):
-        if value == 'me':
-            raise serializers.ValidationError(
-                {'username': ('Недопустимое значение.',)}
-            )
-        return value
+        fields = ('name', 'slug')
+        model = Category
 
 
-class ConfirmationSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=150)
-    confirmation_code = serializers.CharField(max_length=36)
+class GenreSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Genre."""
 
-# Сериализаторы для авторизации и работы с пользователями: конец
+    class Meta:
+        fields = ('name', 'slug')
+        model = Genre
+
+
+class TitleSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Title."""
+
+    rating = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        fields = ('name', 'year', 'rating', 'description', 'genre', 'category')
+        model = Title
+
+    def get_rating(self, obj):
+        """Функция рассчитывает средний рейтинг из оценок."""
+        result = Review.objects.filter(title=obj).aggregate(Avg('score'))
+        if result['score__avg'] is not None:
+            return result['score__avg']
+        else:
+            return 0
