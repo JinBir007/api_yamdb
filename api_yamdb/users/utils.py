@@ -1,14 +1,12 @@
-"""api/utils.py
+"""users/utils.py
 
-Вспомогательные функции для приложения api.
+Вспомогательные функции для приложения users.
 """
 
 from django.core.mail import send_mail
 
 
 def send_confirmation_email(user, confirmation_code, email):
-    """Функция отправляет письма с кодами подтверждения почты."""
-
     message = (f'Пожалуйста, подтвердите свой email для логина {user} на '
                f'YamDB. Ваш код подтверждения: {str(confirmation_code)}')
     send_mail(subject='Подтверждение регистрации на YamDB',
