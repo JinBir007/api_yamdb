@@ -1,17 +1,30 @@
-from rest_framework import mixins, status
-from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet, GenericViewSet, ViewSet
-from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 
-from .serializers import (ReviewSerializer,
-                          CommentSerializer,
-                          ConfirmationSerializer,
-                          UserRegistrationSerializer)
-from ..reviews.models import Review, Comment, EmailConfirmation
+from rest_framework import mixins, status
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import (
+    GenericViewSet,
+    ModelViewSet,
+    ReadOnlyModelViewSet,
+    ViewSet,
+)
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from ..content.models import Category, Genre, Title
+from ..reviews.models import Comment, EmailConfirmation, Review
 from .exceptions import WrongUsernameOrToken
+from .serializers import (
+    CategorySerializer,
+    CommentSerializer,
+    ConfirmationSerializer,
+    GenreSerializer,
+    ReviewSerializer,
+    TitleSerializer,
+    UserRegistrationSerializer,
+)
 from .utils import send_confirmation_email
 
 User = get_user_model()
@@ -74,3 +87,25 @@ class RegistrationConfirmation(APIView):
                             status=status.HTTP_200_OK)
 
 # Классы для авторизации и работы с пользователями: конец
+
+
+class CategoryViewSet(ReadOnlyModelViewSet):
+    """ViewSet для модели Category."""""
+
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+
+class GenreViewSet(ReadOnlyModelViewSet):
+    """ViewSet для модели Genre."""""
+
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+
+
+class TitleViewSet(ModelViewSet):
+    """ViewSet для модели Title."""""
+
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    pagination_class = LimitOffsetPagination

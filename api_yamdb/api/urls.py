@@ -1,15 +1,24 @@
-from rest_framework.routers import DefaultRouter, SimpleRouter
-from django.urls import path, include
+from django.urls import include, path
 
-from .views import (ReviewViewSet,
-                    CommentViewSet,
-                    RegistrationConfirmation,
-                    UserRegistrationViewSet)
+from rest_framework.routers import DefaultRouter, SimpleRouter
+
+from .views import (
+    CategoryViewSet,
+    CommentViewSet,
+    GenreViewSet,
+    RegistrationConfirmation,
+    ReviewViewSet,
+    TitleViewSet,
+    UserRegistrationViewSet,
+)
 
 
 v1_router = DefaultRouter()
 v1_router.register(r'titles/(\d+)/reviews/', ReviewViewSet)
 v1_router.register(r'titles/(\d+)/reviews/(\d+)/comments', CommentViewSet)
+v1_router.register(r'categories/', CategoryViewSet)
+v1_router.register(r'genres/', GenreViewSet)
+v1_router.register(r'titles/', TitleViewSet)
 
 auth_v1_router = SimpleRouter()
 auth_v1_router.register('auth/signup',
