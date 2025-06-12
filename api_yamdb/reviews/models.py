@@ -2,19 +2,25 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator
 from django.db import models
 
+from content.models import Title
+
 User = get_user_model()
-# TODO: Добавить поле title
 
 
 class Review(models.Model):
     """Отзывы"""
-    # user = models.ForeignKey(
-    #    'auth.User',
-    #    on_delete=models.CASCADE,
-    #    related_name='reviews',
-    #    verbose_name='Отзывы')
+    title_id = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='titles',
+        verbose_name='Отзывы')
+    user = models.ForeignKey(
+        'auth.User',
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Отзывы')
     text = models.TextField(verbose_name='Текст отзыва')
-    # author = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    author = models.ForeignKey('auth.User', on_delete=models.CASCADE)
     score = models.PositiveSmallIntegerField(
         validators=[MaxValueValidator(10)], verbose_name='Оценка')
     pub_date = models.DateTimeField(
@@ -28,7 +34,7 @@ class Review(models.Model):
         verbose_name_plural = 'Отзывы'
         constraints = [
             models.UniqueConstraint(
-                fields=['author', 'title'],
+                fields=['author', 'title_id'],
                 name='review_author')
         ]
 
@@ -38,8 +44,18 @@ class Review(models.Model):
 
 class Comment(models.Model):
     """Комментарии"""
+    review_id = models.ForeignKey(
+        Review,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Комментарии')
+    title_id = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='titles',
+        verbose_name='Комментарии')
     text = models.TextField(verbose_name='Текст комментария')
-    # author = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    author = models.ForeignKey('auth.User', on_delete=models.CASCADE)
     review = models.ForeignKey(Review, on_delete=models.CASCADE)
     pub_date = models.DateTimeField(
         auto_now_add=True,
