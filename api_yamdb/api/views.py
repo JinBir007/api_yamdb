@@ -4,9 +4,10 @@ from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (
     CreateModelMixin, RetrieveModelMixin, UpdateModelMixin)
 from rest_framework.response import Response
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.pagination import (LimitOffsetPagination,
+                                       PageNumberPagination)
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.status import HTTP_200_OK
+from rest_framework.status import HTTP_200_OK, HTTP_405_METHOD_NOT_ALLOWED
 from rest_framework.views import APIView
 from rest_framework.viewsets import (
     ModelViewSet, GenericViewSet, ReadOnlyModelViewSet)
@@ -21,7 +22,7 @@ from .serializers import (ConfirmationSerializer,
                           UsersSerializer, CategorySerializer,
                           GenreSerializer, TitleSerializer)
 from .utils import send_confirmation_email
-from .exceptions import WrongUsernameOrToken
+from .exceptions import WrongEmail, WrongUsernameOrCode
 from content.models import Genre, Category, Title
 from .permissions import (IsAdminOrReadOnly,
                           IsUserOrModeratorOrReadOnly,
@@ -55,13 +56,19 @@ class UserRegistrationViewSet(CreateModelMixin,
 
     def create(self, request, *args, **kwargs):
         username = request.data.get('username')
-        try:
+        email = request.data.get('email')
+        if User.objects.filter(username=username,
+                               email_confirmed=False).exists():
             user = User.objects.get(username=username,
                                     email_confirmed=False)
+            if user.email != email:
+                raise WrongEmail('Указан некорректный адрес электроннной почты')
             user.delete()
-        except Exception:
-            pass
-        return super().create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=HTTP_200_OK, headers=headers)
 
     def perform_create(self, serializer):
         username = serializer.validated_data.get('username')
@@ -95,12 +102,14 @@ class RegistrationConfirmation(APIView):
                     user=user
                 )
             except Exception:
-                raise WrongUsernameOrToken
+                raise WrongUsernameOrCode
             user.email_confirmed = True
             user.save()
             refresh = RefreshToken.for_user(user)
             return Response({'token': str(refresh.access_token)},
                             status=HTTP_200_OK)
+        else:
+            raise WrongUsernameOrCode
 
 
 class UsersMeViewSet(GenericViewSet,
@@ -127,11 +136,20 @@ class UserViewSet(ModelViewSet):
 
     queryset = User.objects.all()
     serializer_class = UsersSerializer
+    http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'username'
     permission_classes = (OnlyAdminHasAccess,)
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
-    pagination_class = LimitOffsetPagination
+    pagination_class = PageNumberPagination
+
+    def _allowed_methods(self):
+        methods = [m.upper() for m in
+                   self.http_method_names if hasattr(self, m)]
+        print(self.detail)
+        if self.detail and 'POST' in methods:
+            methods.remove('POST')
+        return methods
 
 # конец раздела классов для работы с пользователями
 
