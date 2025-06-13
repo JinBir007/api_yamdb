@@ -23,7 +23,9 @@ from .serializers import (ConfirmationSerializer,
 from .utils import send_confirmation_email
 from .exceptions import WrongUsernameOrToken
 from content.models import Genre, Category, Title
-from .permissions import IsAdmin, IsUserOrModerator, OnlyAdminHasAccess
+from .permissions import (IsAdminOrReadOnly,
+                          IsUserOrModeratorOrReadOnly,
+                          OnlyAdminHasAccess)
 
 User = get_user_model()
 

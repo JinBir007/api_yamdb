@@ -3,12 +3,11 @@
 Permissions для приложения api.
 """
 
-from rest_framework.permissions import (BasePermission,
-                                        IsAuthenticatedOrReadOnly,
+from rest_framework.permissions import (IsAuthenticatedOrReadOnly,
                                         SAFE_METHODS)
 
 
-class IsUserOrModerator(IsAuthenticatedOrReadOnly):
+class IsUserOrModeratorOrReadOnly(IsAuthenticatedOrReadOnly):
     """Разрешение уровня user/moderator."""
 
     def has_object_permission(self, request, view, obj):
@@ -28,7 +27,7 @@ class IsUserOrModerator(IsAuthenticatedOrReadOnly):
             return request.method in SAFE_METHODS
 
 
-class IsAdmin(IsAuthenticatedOrReadOnly):
+class IsAdminOrReadOnly(IsAuthenticatedOrReadOnly):
     """Разрешение уровня admin."""
 
     def has_permission(self, request, view):
