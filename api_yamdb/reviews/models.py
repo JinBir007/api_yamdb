@@ -12,10 +12,10 @@ class BaseModel(models.Model):
     title_id = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='titles',
+        related_name='%(class)s_titles',
         verbose_name='Отзывы')
     text = models.TextField()
-    author = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     pub_date = models.DateTimeField(
         auto_now_add=True,
         db_index=True,
@@ -34,9 +34,9 @@ class Review(BaseModel):
         ordering = ('-pub_date',)
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
-        validators = [
+        constraints = [
             models.UniqueConstraint(
-                fields=['author', 'title_id'],
+                fields=('author', 'title_id'),
                 name='review_author')
         ]
 
