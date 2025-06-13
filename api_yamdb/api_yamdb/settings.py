@@ -22,7 +22,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'content.apps.ContentConfig',
     'rest_framework_simplejwt',
-    #'django_extensions',
+    # 'django_extensions',
 ]
 
 MIDDLEWARE = [
