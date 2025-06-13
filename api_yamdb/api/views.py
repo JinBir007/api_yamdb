@@ -5,6 +5,7 @@ from rest_framework.mixins import (
     CreateModelMixin, RetrieveModelMixin, UpdateModelMixin)
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.status import HTTP_200_OK
 from rest_framework.views import APIView
 from rest_framework.viewsets import (
@@ -16,13 +17,13 @@ from reviews.models import Review, Comment
 from users.models import EmailConfirmation
 from .serializers import (ConfirmationSerializer,
                           UserRegistrationSerializer,
-                          UsersMeGetSerializer,
                           UsersMePatchSerializer,
                           UsersSerializer, CategorySerializer,
                           GenreSerializer, TitleSerializer)
 from .utils import send_confirmation_email
 from .exceptions import WrongUsernameOrToken
 from content.models import Genre, Category, Title
+from .permissions import IsAdmin, IsUserOrModerator
 
 User = get_user_model()
 
@@ -40,6 +41,8 @@ class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
     http_method_names = ('get', 'post', 'patch', 'delete')
 
+
+# раздел классов для работы с пользователями
 
 class UserRegistrationViewSet(CreateModelMixin,
                               GenericViewSet):
@@ -85,7 +88,7 @@ class RegistrationConfirmation(APIView):
             user = get_object_or_404(User, username=username)
             user_confirmation_code = request.data.get('confirmation_code')
             try:
-                EmailConfirmation.objects.get(
+                confirmation = EmailConfirmation.objects.get(
                     pk=user_confirmation_code,
                     user=user
                 )
@@ -98,22 +101,21 @@ class RegistrationConfirmation(APIView):
                             status=HTTP_200_OK)
 
 
-class UsersMeViewSet(
-    GenericViewSet,
-    UpdateModelMixin,
-    RetrieveModelMixin
-):
+class UsersMeViewSet(GenericViewSet,
+                     UpdateModelMixin,
+                     RetrieveModelMixin):
     """Получение и изменение информации о текущем пользователе."""
 
     queryset = User.objects.all()
-    serializer_class = UsersMeGetSerializer
+    serializer_class = UsersSerializer
+    permission_classes = (IsAuthenticated,)
 
     def get_object(self):
         return get_object_or_404(User, pk=self.request.user.pk)
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
-            return UsersMeGetSerializer
+            return UsersSerializer
         else:
             return UsersMePatchSerializer
 
@@ -124,9 +126,12 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UsersSerializer
     lookup_field = 'username'
+    permission_classes = (IsAdmin,)
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
     pagination_class = LimitOffsetPagination
+
+# конец раздела классов для работы с пользователями
 
 
 class CategoryViewSet(ReadOnlyModelViewSet):
