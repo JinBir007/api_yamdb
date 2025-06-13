@@ -1,14 +1,14 @@
 from django.db import models
 
 
-class Category(models.Model):
-    """Категория."""
+    class Category(models.Model):
+        """Категория."""
 
-    name = models.CharField(max_length=256, required=True)
-    slug = models.SlugField(max_length=50, unique=True, required=True)
+        name = models.CharField(max_length=256, required=True)
+        slug = models.SlugField(max_length=50, unique=True, required=True)
 
-    def __str__(self):
-        return self.name
+        def __str__(self):
+            return self.name
 
 
 class Genre(models.Model):

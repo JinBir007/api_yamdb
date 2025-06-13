@@ -29,14 +29,14 @@ class CommentViewSet(ModelViewSet):
     http_method_names = ('get', 'post', 'patch', 'delete')
 
 
-class CategoryViewSet(ReadOnlyModelViewSet):
+class CategoryViewSet(ModelViewSet):
     """ViewSet для модели Category."""""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
-class GenreViewSet(ReadOnlyModelViewSet):
+class GenreViewSet(ModelViewSet):
     """ViewSet для модели Genre."""""
 
     queryset = Genre.objects.all()
