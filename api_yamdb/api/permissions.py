@@ -28,8 +28,19 @@ class IsUserOrModerator(IsAuthenticatedOrReadOnly):
             return request.method in SAFE_METHODS
 
 
-class IsAdmin(BasePermission):
+class IsAdmin(IsAuthenticatedOrReadOnly):
     """Разрешение уровня admin."""
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        if request.user and request.user.is_authenticated:
+            return request.user.role == 'admin' or request.user.is_superuser
+        return False
+
+
+class OnlyAdminHasAccess(IsAuthenticatedOrReadOnly):
+    """Разрешение уровня admin даже на чтение."""
 
     def has_permission(self, request, view):
         if request.user and request.user.is_authenticated:

@@ -23,7 +23,7 @@ from .serializers import (ConfirmationSerializer,
 from .utils import send_confirmation_email
 from .exceptions import WrongUsernameOrToken
 from content.models import Genre, Category, Title
-from .permissions import IsAdmin, IsUserOrModerator
+from .permissions import IsAdmin, IsUserOrModerator, OnlyAdminHasAccess
 
 User = get_user_model()
 
@@ -126,7 +126,7 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UsersSerializer
     lookup_field = 'username'
-    permission_classes = (IsAdmin,)
+    permission_classes = (OnlyAdminHasAccess,)
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
     pagination_class = LimitOffsetPagination
