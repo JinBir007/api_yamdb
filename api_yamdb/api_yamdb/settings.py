@@ -20,7 +20,6 @@ INSTALLED_APPS = [
     'reviews.apps.ReviewsConfig',
     'api.apps.ApiConfig',
     'users.apps.UsersConfig',
-    'content.apps.ContentConfig',
     'rest_framework_simplejwt',
     'django_extensions',
     'content.apps.ContentConfig',
