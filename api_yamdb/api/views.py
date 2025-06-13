@@ -136,7 +136,7 @@ class CategoryViewSet(ReadOnlyModelViewSet):
     serializer_class = CategorySerializer
 
 
-class GenreViewSet(ReadOnlyModelViewSet):
+class GenreViewSet(ModelViewSet):
     """ViewSet для модели Genre."""""
 
     queryset = Genre.objects.all()

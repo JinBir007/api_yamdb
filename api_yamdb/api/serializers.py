@@ -92,24 +92,21 @@ class CategorySerializer(ModelSerializer):
 
 class GenreSerializer(ModelSerializer):
     """Сериализатор для модели Genre."""
-
     class Meta:
         fields = ('name', 'slug')
         model = Genre
 
 
+
 class TitleSerializer(ModelSerializer):
     """Сериализатор для модели Title."""
-
     rating = SerializerMethodField(read_only=True)
-
     class Meta:
         fields = ('name', 'year', 'rating', 'description', 'genre', 'category')
         model = Title
 
     def get_rating(self, obj):
         """Функция рассчитывает средний рейтинг из оценок."""
-        from reviews.models import Review
         result = Review.objects.filter(title=obj).aggregate(Avg('score'))
         if result['score__avg'] is not None:
             return result['score__avg']

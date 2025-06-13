@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'content.apps.ContentConfig',
     'rest_framework_simplejwt',
+    'content.apps.ContentConfig',
     # 'django_extensions',
 ]
 
