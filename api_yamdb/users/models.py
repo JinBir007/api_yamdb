@@ -7,7 +7,7 @@ from uuid import uuid4
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-CHOICES = (
+ROLE_CHOICES = (
     ('user', 'Пользователь'),
     ('moderator', 'Модератор'),
     ('admin', 'Админ'),
@@ -21,7 +21,7 @@ class ApiUser(AbstractUser):
     email_confirmed = models.BooleanField(default=False)
     bio = models.TextField(verbose_name='Биография', blank=True)
     role = models.CharField(max_length=12,
-                            choices=CHOICES,
+                            choices=ROLE_CHOICES,
                             default='user',
                             verbose_name='Роль')
     REQUIRED_FIELDS = ['email',]

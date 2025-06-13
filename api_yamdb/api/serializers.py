@@ -32,6 +32,8 @@ class CommentSerializer(ModelSerializer):
         fields = '__all__'
 
 
+# раздел сериализаторов для классов работы с пользователями
+
 class UserRegistrationSerializer(ModelSerializer):
     class Meta:
         model = User
@@ -48,17 +50,6 @@ class UserRegistrationSerializer(ModelSerializer):
 class ConfirmationSerializer(Serializer):
     username = CharField(max_length=150, allow_blank=False)
     confirmation_code = CharField(max_length=36, allow_blank=False)
-
-
-class UsersMeGetSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('username',
-                  'email',
-                  'first_name',
-                  'last_name',
-                  'bio',
-                  'role')
 
 
 class UsersMePatchSerializer(ModelSerializer):
@@ -80,6 +71,8 @@ class UsersSerializer(ModelSerializer):
                   'last_name',
                   'bio',
                   'role')
+
+# конец раздела сериализаторов для классов работы с пользователями
 
 
 class CategorySerializer(ModelSerializer):

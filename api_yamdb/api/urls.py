@@ -19,10 +19,10 @@ v1_router.register(r'auth/signup',
 v1_router.register(r'users', UserViewSet)
 
 urlpatterns = [
-    path(r'v1/', include(v1_router.urls)),
-    path(r'auth/token/',
-         RegistrationConfirmation.as_view(), name='auth_token'),
-    path(r'users/me/', UsersMeViewSet.as_view(
+    path(r'v1/users/me/', UsersMeViewSet.as_view(
         {'get': 'retrieve', 'patch': 'partial_update'}),
         name='auth_tokusers_meen'),
+    path(r'v1/', include(v1_router.urls)),
+    path(r'v1/auth/token/',
+         RegistrationConfirmation.as_view(), name='auth_token'),
 ]
