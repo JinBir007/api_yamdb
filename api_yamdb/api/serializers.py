@@ -1,12 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Avg
-
-from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import (
+    ModelSerializer, ValidationError, CharField, Serializer,
+    SerializerMethodField)
 from rest_framework.validators import UniqueTogetherValidator
 
-from ..content.models import Category, Genre, Title
-from ..reviews.models import Comment, Review
+from reviews.models import Review, Comment
+from content.models import Genre, Title, Category
 
 User = get_user_model()
 
@@ -19,7 +19,7 @@ class ReviewSerializer(ModelSerializer):
         validators = [
             UniqueTogetherValidator(
                 queryset=Review.objects.all(),
-                fields=['title', 'author'],
+                fields=('title', 'author'),
                 message='Вы уже оставляли отзыв на данное произведение'
             )
         ]
@@ -32,7 +32,57 @@ class CommentSerializer(ModelSerializer):
         fields = '__all__'
 
 
-class CategorySerializer(serializers.ModelSerializer):
+class UserRegistrationSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('username', 'email')
+
+    def validate_username(self, value):
+        if value == 'me':
+            raise ValidationError(
+                {'username': ('Недопустимое значение.',)}
+            )
+        return value
+
+
+class ConfirmationSerializer(Serializer):
+    username = CharField(max_length=150, allow_blank=False)
+    confirmation_code = CharField(max_length=36, allow_blank=False)
+
+
+class UsersMeGetSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('username',
+                  'email',
+                  'first_name',
+                  'last_name',
+                  'bio',
+                  'role')
+
+
+class UsersMePatchSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('username',
+                  'email',
+                  'first_name',
+                  'last_name',
+                  'bio',)
+
+
+class UsersSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('username',
+                  'email',
+                  'first_name',
+                  'last_name',
+                  'bio',
+                  'role')
+
+
+class CategorySerializer(ModelSerializer):
     """Сериализатор для модели Category."""
 
     class Meta:
@@ -40,19 +90,17 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
 
 
-class GenreSerializer(serializers.ModelSerializer):
+class GenreSerializer(ModelSerializer):
     """Сериализатор для модели Genre."""
-
     class Meta:
         fields = ('name', 'slug')
         model = Genre
 
 
-class TitleSerializer(serializers.ModelSerializer):
+
+class TitleSerializer(ModelSerializer):
     """Сериализатор для модели Title."""
-
-    rating = serializers.SerializerMethodField(read_only=True)
-
+    rating = SerializerMethodField(read_only=True)
     class Meta:
         fields = ('name', 'year', 'rating', 'description', 'genre', 'category')
         model = Title
