@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'content.apps.ContentConfig',
     'rest_framework_simplejwt',
     'django_extensions',
+    'content.apps.ContentConfig',
 ]
 
 MIDDLEWARE = [
