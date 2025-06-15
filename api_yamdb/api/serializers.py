@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Avg
 from rest_framework.serializers import (
-    ModelSerializer, ValidationError, CharField, Serializer,
+    ModelSerializer, ValidationError, SlugRelatedField, CharField, Serializer,
     SerializerMethodField)
 from rest_framework.validators import UniqueTogetherValidator
 
@@ -85,6 +85,7 @@ class CategorySerializer(ModelSerializer):
 
 class GenreSerializer(ModelSerializer):
     """Сериализатор для модели Genre."""
+
     class Meta:
         fields = ('name', 'slug')
         model = Genre
@@ -93,10 +94,15 @@ class GenreSerializer(ModelSerializer):
 
 class TitleSerializer(ModelSerializer):
     """Сериализатор для модели Title."""
+
     rating = SerializerMethodField(read_only=True)
+    
     class Meta:
-        fields = ('name', 'year', 'rating', 'description', 'genre', 'category')
+        fields = (
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+        )
         model = Title
+        read_only_fields = ('rating',)
 
     def get_rating(self, obj):
         """Функция рассчитывает средний рейтинг из оценок."""
@@ -105,3 +111,7 @@ class TitleSerializer(ModelSerializer):
             return result['score__avg']
         else:
             return 0
+
+    def create(self, validated_data):
+        """Создание нового объекта Title."""
+        return Title.objects.create(**validated_data)

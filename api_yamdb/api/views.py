@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import (
     ModelViewSet, GenericViewSet, ReadOnlyModelViewSet)
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import MethodNotAllowed
 
 from .serializers import ReviewSerializer, CommentSerializer
 from reviews.models import Review, Comment
@@ -154,11 +155,21 @@ class UserViewSet(ModelViewSet):
 # конец раздела классов для работы с пользователями
 
 
-class CategoryViewSet(ReadOnlyModelViewSet):
+class CategoryViewSet(ModelViewSet):
     """ViewSet для модели Category."""""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    lookup_field = 'slug'
+    permission_classes = [IsAdminOrReadOnly]
+    filter_backends = [SearchFilter]
+    search_fields = ['name']
+
+    def retrieve(self, request, *args, **kwargs):
+        raise MethodNotAllowed('GET')
+
+    def partial_update(self, request, *args, **kwargs):
+        raise MethodNotAllowed('PATCH')
 
 
 class GenreViewSet(ModelViewSet):
@@ -166,6 +177,16 @@ class GenreViewSet(ModelViewSet):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
+    lookup_field = 'slug'
+    permission_classes = [IsAdminOrReadOnly]
+    filter_backends = [SearchFilter]
+    search_fields = ['name']
+
+    def retrieve(self, request, *args, **kwargs):
+        raise MethodNotAllowed('GET')
+
+    def partial_update(self, request, *args, **kwargs):
+        raise MethodNotAllowed('PATCH')
 
 
 class TitleViewSet(ModelViewSet):
@@ -174,3 +195,6 @@ class TitleViewSet(ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     pagination_class = LimitOffsetPagination
+    permission_classes = [IsAdminOrReadOnly]
+    filter_backends = [SearchFilter]
+    search_fields = ['name']

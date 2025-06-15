@@ -244,6 +244,48 @@ class Test04TitleAPI:
             'данные произведения. Сейчас поле `name` отсутствует в ответе или '
             'содержит некорректное значение.'
         )
+        assert response.status_code == HTTPStatus.OK, (
+            'Проверьте, что GET-запрос неавторизованного пользователя к '
+            f'`{self.TITLES_DETAIL_URL_TEMPLATE}` возвращает ответ со '
+            'статусом 200.'
+        )
+        data = response.json()
+        assert isinstance(data.get('id'), int), (
+            'Поле `id` отсутствует или содержит некорректное значение '
+            'в ответе на GET-запрос неавторизованного пользователя к '
+            f'`{self.TITLES_DETAIL_URL_TEMPLATE}`.'
+        )
+        assert data.get('category') == categories[0], (
+            'Поле `category` отсутствует или содержит некорректное значение '
+            'в ответе на GET-запрос неавторизованного пользователя к '
+            f'`{self.TITLES_DETAIL_URL_TEMPLATE}`.'
+        )
+        assert data.get('name') == titles[0]['name'], (
+            'Поле `name` отсутствует или содержит некорректное значение '
+            'в ответе на GET-запрос неавторизованного пользователя к '
+            f'`{self.TITLES_DETAIL_URL_TEMPLATE}`.'
+        )
+
+        update_data = {
+            'name': 'Новое название',
+            'category': categories[1]['slug']
+        }
+        response = admin_client.patch(
+            self.TITLES_DETAIL_URL_TEMPLATE.format(title_id=titles[0]['id']),
+            data=update_data
+        )
+        assert response.status_code == HTTPStatus.OK, (
+            'Проверьте, что PATCH-запрос администратора к '
+            f'`{self.TITLES_DETAIL_URL_TEMPLATE}` возвращает ответ со '
+            'статусом 200.'
+        )
+        data = response.json()
+        assert data.get('name') == update_data['name'], (
+            'Проверьте, что PATCH-запрос администратора к '
+            f'`{self.TITLES_DETAIL_URL_TEMPLATE}` возвращает изменённые '
+            'данные произведения. Сейчас поле `name` отсутствует в ответе или '
+            'содержит некорректное значение.'
+        )
         response = client.get(
             self.TITLES_DETAIL_URL_TEMPLATE.format(title_id=titles[0]['id'])
         )
