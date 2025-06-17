@@ -1,5 +1,7 @@
 from django.contrib.auth import get_user_model
+# from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.db.models import Avg
+
 from rest_framework.serializers import (
     ModelSerializer, ValidationError, SlugRelatedField, CharField, Serializer,
     SerializerMethodField)
@@ -7,6 +9,8 @@ from rest_framework.validators import UniqueTogetherValidator
 
 from reviews.models import Review, Comment
 from content.models import Genre, Title, Category
+import logging
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -91,27 +95,50 @@ class GenreSerializer(ModelSerializer):
         model = Genre
 
 
-
 class TitleSerializer(ModelSerializer):
     """Сериализатор для модели Title."""
 
     rating = SerializerMethodField(read_only=True)
-    
+    category = SlugRelatedField(
+        queryset=Category.objects.all(),
+        slug_field='slug',
+        write_only=True
+    )
+    genre = SlugRelatedField(
+        many=True,
+        queryset=Genre.objects.all(),
+        slug_field='slug',
+        write_only=True
+    )
+    category_data = CategorySerializer(source='category', read_only=True)
+    genre_data = GenreSerializer(source='genre', many=True, read_only=True)
+
     class Meta:
-        fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
-        )
         model = Title
-        read_only_fields = ('rating',)
+        fields = ['id', 'name', 'year', 'description', 'genre', 'genre_data', 'category', 'category_data', 'rating']
+        read_only_fields = ['rating', 'genre_data', 'category_data']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        category_data = representation.pop('category_data', None)
+        if category_data:
+            representation['category'] = category_data
+
+        genre_data = representation.pop('genre_data', None)
+        if genre_data:
+            representation['genre'] = genre_data
+        return representation
 
     def get_rating(self, obj):
         """Функция рассчитывает средний рейтинг из оценок."""
-        result = Review.objects.filter(title=obj).aggregate(Avg('score'))
+        result = Review.objects.filter(title_id=obj.id).aggregate(Avg('score'))
         if result['score__avg'] is not None:
             return result['score__avg']
         else:
-            return 0
+            return None
 
     def create(self, validated_data):
-        """Создание нового объекта Title."""
-        return Title.objects.create(**validated_data)
+        genres = validated_data.pop('genre', [])
+        title = Title.objects.create(**validated_data)
+        title.genre.set(genres)
+        return title

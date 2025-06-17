@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from rest_framework.filters import SearchFilter
+
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.mixins import (
     CreateModelMixin, RetrieveModelMixin, UpdateModelMixin)
 from rest_framework.response import Response
@@ -11,8 +12,10 @@ from rest_framework.status import HTTP_200_OK, HTTP_405_METHOD_NOT_ALLOWED
 from rest_framework.views import APIView
 from rest_framework.viewsets import (
     ModelViewSet, GenericViewSet, ReadOnlyModelViewSet)
+from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import MethodNotAllowed
+from rest_framework import viewsets, mixins
 
 from .serializers import ReviewSerializer, CommentSerializer
 from reviews.models import Review, Comment
@@ -190,11 +193,42 @@ class GenreViewSet(ModelViewSet):
 
 
 class TitleViewSet(ModelViewSet):
-    """ViewSet для модели Title."""""
+    """ViewSet для модели Title."""
 
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     pagination_class = LimitOffsetPagination
     permission_classes = [IsAdminOrReadOnly]
-    filter_backends = [SearchFilter]
     search_fields = ['name']
+    ordering_fields = ['name', 'year']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == 'list':
+            genre = self.request.query_params.get('genre', None)
+            category = self.request.query_params.get('category', None)
+            year = self.request.query_params.get('year', None)
+            name = self.request.query_params.get('name', None)
+
+            if genre is not None:
+                queryset = queryset.filter(genre__slug=genre)
+            if category is not None:
+                queryset = queryset.filter(category__slug=category)
+            if year is not None:
+                queryset = queryset.filter(year=year)
+            if name is not None:
+                queryset = queryset.filter(name=name)
+        return queryset
+
+    def update(self, request, *args, **kwargs):
+        """Запрещает PUT-запросы (полное обновление)."""
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def partial_update(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+    def perform_update(self, serializer):
+        serializer.save()
