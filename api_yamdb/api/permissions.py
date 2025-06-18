@@ -1,8 +1,3 @@
-"""api/permissions.py
-
-Permissions для приложения api.
-"""
-
 from rest_framework.permissions import (IsAuthenticatedOrReadOnly,
                                         SAFE_METHODS)
 

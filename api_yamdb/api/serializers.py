@@ -1,22 +1,24 @@
 from django.contrib.auth import get_user_model
-# from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.db.models import Avg
 
 from rest_framework.serializers import (
-    ModelSerializer, ValidationError, SlugRelatedField, CharField, Serializer,
-    SerializerMethodField)
-from rest_framework.validators import UniqueTogetherValidator
+    CharField,
+    ModelSerializer,
+    Serializer,
+    SerializerMethodField,
+    SlugRelatedField,
+    ValidationError,
+)
 
-from reviews.models import Review, Comment
-from content.models import Genre, Title, Category
-import logging
-logger = logging.getLogger(__name__)
+from reviews.models import Comment, Review
+from content.models import Category, Genre, Title
 
 User = get_user_model()
 
 
 class ReviewSerializer(ModelSerializer):
     """Сериализатор отзывов."""
+
     author = SlugRelatedField(
         read_only=True,
         slug_field='username'
@@ -41,6 +43,7 @@ class ReviewSerializer(ModelSerializer):
 
 class CommentSerializer(ModelSerializer):
     """Сериализатор комментариев."""
+
     author = SlugRelatedField(
         read_only=True,
         slug_field='username'
@@ -130,7 +133,10 @@ class TitleSerializer(ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ['id', 'name', 'year', 'description', 'genre', 'genre_data', 'category', 'category_data', 'rating']
+        fields = [
+            'id', 'name', 'year', 'description', 'genre', 'genre_data',
+            'category', 'category_data', 'rating'
+        ]
         read_only_fields = ['rating', 'genre_data', 'category_data']
 
     def to_representation(self, instance):

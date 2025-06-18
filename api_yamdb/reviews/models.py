@@ -8,7 +8,8 @@ User = get_user_model()
 
 
 class BaseModel(models.Model):
-    """Базовая абстрактная модель отзывов и комментариев"""
+    """Базовая абстрактная модель отзывов и комментариев."""
+
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -26,7 +27,8 @@ class BaseModel(models.Model):
 
 
 class Review(BaseModel):
-    """Отзывы"""
+    """Отзывы."""
+
     score = models.PositiveSmallIntegerField(
         validators=[MaxValueValidator(10)], verbose_name='Оценка')
 
@@ -45,7 +47,8 @@ class Review(BaseModel):
 
 
 class Comment(BaseModel):
-    """Комментарии"""
+    """Комментарии."""
+
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,

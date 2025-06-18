@@ -1,42 +1,52 @@
-from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 
+from rest_framework import mixins, status, viewsets
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (
-    CreateModelMixin, RetrieveModelMixin, UpdateModelMixin)
-from rest_framework.response import Response
-from rest_framework.pagination import (LimitOffsetPagination,
-                                       PageNumberPagination)
+    CreateModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+)
+from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.status import HTTP_200_OK, HTTP_405_METHOD_NOT_ALLOWED
+from rest_framework.response import Response
+from rest_framework.serializers import ModelSerializer
+from rest_framework.status import HTTP_200_OK
 from rest_framework.views import APIView
-from rest_framework.viewsets import (
-    ModelViewSet, GenericViewSet, ReadOnlyModelViewSet)
-from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.exceptions import MethodNotAllowed
-from rest_framework import viewsets, mixins
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from .serializers import ReviewSerializer, CommentSerializer
-from reviews.models import Review, Comment
-from users.models import EmailConfirmation
-from .serializers import (ConfirmationSerializer,
-                          UserRegistrationSerializer,
-                          UsersMePatchSerializer,
-                          UsersSerializer, CategorySerializer,
-                          GenreSerializer, TitleSerializer)
-from .utils import send_confirmation_email
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from .exceptions import WrongEmail, WrongUsernameOrCode
-from content.models import Genre, Category, Title
-from .permissions import (IsAdminOrReadOnly,
-                          IsUserOrModeratorOrReadOnly,
-                          OnlyAdminHasAccess)
+from .permissions import (
+    IsAdminOrReadOnly,
+    IsUserOrModeratorOrReadOnly,
+    OnlyAdminHasAccess,
+)
+from .serializers import (
+    CategorySerializer,
+    CommentSerializer,
+    ConfirmationSerializer,
+    GenreSerializer,
+    ReviewSerializer,
+    TitleSerializer,
+    UserRegistrationSerializer,
+    UsersMePatchSerializer,
+    UsersSerializer,
+)
+from .utils import send_confirmation_email
+from content.models import Category, Genre, Title
+from reviews.models import Review
+from users.models import EmailConfirmation
 
 User = get_user_model()
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Представление отзывов."""
+
     serializer_class = ReviewSerializer
     permission_classes = (IsUserOrModeratorOrReadOnly,)
     pagination_class = PageNumberPagination
@@ -54,6 +64,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Представление комментариев."""
+
     serializer_class = CommentSerializer
     permission_classes = (IsUserOrModeratorOrReadOnly,)
     http_method_names = ('get', 'post', 'patch', 'delete')
@@ -98,7 +109,9 @@ class UserRegistrationViewSet(CreateModelMixin,
             user = User.objects.get(username=username,
                                     email_confirmed=False)
             if user.email != email:
-                raise WrongEmail('Указан некорректный адрес электроннной почты')
+                raise WrongEmail(
+                    'Указан некорректный адрес электроннной почты'
+                )
             user.delete()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -197,14 +210,12 @@ class CategoryViewSet(ModelViewSet):
     serializer_class = CategorySerializer
     lookup_field = 'slug'
     permission_classes = [IsAdminOrReadOnly]
+    http_method_names = ('get', 'post', 'delete')
     filter_backends = [SearchFilter]
     search_fields = ['name']
 
     def retrieve(self, request, *args, **kwargs):
         raise MethodNotAllowed('GET')
-
-    def partial_update(self, request, *args, **kwargs):
-        raise MethodNotAllowed('PATCH')
 
 
 class GenreViewSet(ModelViewSet):
@@ -214,14 +225,12 @@ class GenreViewSet(ModelViewSet):
     serializer_class = GenreSerializer
     lookup_field = 'slug'
     permission_classes = [IsAdminOrReadOnly]
+    http_method_names = ('get', 'post', 'delete')
     filter_backends = [SearchFilter]
     search_fields = ['name']
 
     def retrieve(self, request, *args, **kwargs):
         raise MethodNotAllowed('GET')
-
-    def partial_update(self, request, *args, **kwargs):
-        raise MethodNotAllowed('PATCH')
 
 
 class TitleViewSet(ModelViewSet):
@@ -231,6 +240,7 @@ class TitleViewSet(ModelViewSet):
     serializer_class = TitleSerializer
     pagination_class = LimitOffsetPagination
     permission_classes = [IsAdminOrReadOnly]
+    http_method_names = ('get', 'post', 'patch', 'delete')
     search_fields = ['name']
     ordering_fields = ['name', 'year']
 
@@ -251,16 +261,3 @@ class TitleViewSet(ModelViewSet):
             if name is not None:
                 queryset = queryset.filter(name=name)
         return queryset
-
-    def update(self, request, *args, **kwargs):
-        """Запрещает PUT-запросы (полное обновление)."""
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def partial_update(self, request, *args, **kwargs):
-        serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
-
-    def perform_update(self, serializer):
-        serializer.save()

@@ -1,8 +1,3 @@
-"""users/utils.py
-
-Вспомогательные функции для приложения users.
-"""
-
 from django.core.mail import send_mail
 
 
@@ -12,5 +7,5 @@ def send_confirmation_email(user, confirmation_code, email):
     send_mail(subject='Подтверждение регистрации на YamDB',
               message=message,
               from_email='admin@yamdb.com',
-              recipient_list=[email,],
+              recipient_list=[email, ],
               fail_silently=True)

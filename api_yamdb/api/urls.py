@@ -3,9 +3,16 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
-    ReviewViewSet, CommentViewSet, UserRegistrationViewSet, UserViewSet,
-    RegistrationConfirmation, UsersMeViewSet, CategoryViewSet, GenreViewSet,
-    TitleViewSet)
+    CategoryViewSet,
+    CommentViewSet,
+    GenreViewSet,
+    RegistrationConfirmation,
+    ReviewViewSet,
+    TitleViewSet,
+    UserRegistrationViewSet,
+    UsersMeViewSet,
+    UserViewSet,
+)
 
 v1_router = DefaultRouter()
 v1_router.register(r'categories', CategoryViewSet, basename='category')
