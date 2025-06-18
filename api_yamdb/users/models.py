@@ -1,8 +1,3 @@
-"""users/models.py
-
-Описание моделей данных для приложения users.
-"""
-
 from uuid import uuid4
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -24,7 +19,7 @@ class ApiUser(AbstractUser):
                             choices=ROLE_CHOICES,
                             default='user',
                             verbose_name='Роль')
-    REQUIRED_FIELDS = ['email',]
+    REQUIRED_FIELDS = ['email', ]
 
     class Meta:
         ordering = ('username',)

@@ -1,8 +1,3 @@
-"""users/exceptions.py
-
-Исключения для приложения users.
-"""
-
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 
