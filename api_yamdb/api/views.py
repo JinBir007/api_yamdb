@@ -35,18 +35,55 @@ from .permissions import (IsAdminOrReadOnly,
 User = get_user_model()
 
 
-class ReviewViewSet(ModelViewSet):
-    """ViewSet для модели Review"""""
-    queryset = Review.objects.all()
+class ReviewViewSet(viewsets.ModelViewSet):
+    """Представление отзывов."""
     serializer_class = ReviewSerializer
+    permission_classes = (IsUserOrModeratorOrReadOnly,)
+    pagination_class = PageNumberPagination
     http_method_names = ('get', 'post', 'patch', 'delete')
 
+    def perform_create(self, serializer):
+        title = get_object_or_404(
+            Title,
+            pk=self.kwargs.get('title_id')
+        )
+        serializer.save(
+            author=self.request.user,
+            title=title
+        )
 
-class CommentViewSet(ModelViewSet):
-    """ViewSet для модели Comment"""
-    queryset = Comment.objects.all()
+    def get_queryset(self):
+        title = self.kwargs.get('title_id')
+        return Review.objects.filter(id=title)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    """Представление комментариев."""
     serializer_class = CommentSerializer
+    permission_classes = (IsUserOrModeratorOrReadOnly,)
     http_method_names = ('get', 'post', 'patch', 'delete')
+
+    def get_queryset(self):
+        review = get_object_or_404(
+            Review,
+            pk=self.kwargs.get('review_id')
+        )
+        return review.comments.all().order_by('id')
+
+    def perform_create(self, serializer):
+        review = get_object_or_404(
+            Review,
+            pk=self.kwargs.get('review_id')
+        )
+        title = get_object_or_404(
+            Title,
+            pk=self.kwargs.get('title_id')
+        )
+        serializer.save(
+            title=title,
+            author=self.request.user,
+            review=review,
+        )
 
 
 # раздел классов для работы с пользователями
