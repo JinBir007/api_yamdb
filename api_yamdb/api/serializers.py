@@ -16,24 +16,39 @@ User = get_user_model()
 
 
 class ReviewSerializer(ModelSerializer):
-    """Сериализатор для модели Review"""
+    """Сериализатор отзывов."""
+    author = SlugRelatedField(
+        read_only=True,
+        slug_field='username'
+    )
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        if request.method == 'POST':
+            author = request.user
+            if Review.objects.filter(
+                author=author,
+                title_id=self.context.get('view').kwargs.get('title_id')
+            ).exists():
+                raise ValidationError(
+                    'Нельзя создать повторный отзыв на это произведение')
+        return attrs
+
     class Meta:
         model = Review
-        fields = '__all__'
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Review.objects.all(),
-                fields=('title', 'author'),
-                message='Вы уже оставляли отзыв на данное произведение'
-            )
-        ]
+        fields = ('id', 'author', 'text', 'score', 'pub_date')
 
 
 class CommentSerializer(ModelSerializer):
-    """Сериализатор для модели Comment"""
+    """Сериализатор комментариев."""
+    author = SlugRelatedField(
+        read_only=True,
+        slug_field='username'
+    )
+
     class Meta:
         model = Comment
-        fields = '__all__'
+        fields = ('id', 'text', 'author', 'pub_date',)
 
 
 # раздел сериализаторов для классов работы с пользователями

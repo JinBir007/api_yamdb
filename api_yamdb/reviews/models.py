@@ -9,7 +9,7 @@ User = get_user_model()
 
 class BaseModel(models.Model):
     """Базовая абстрактная модель отзывов и комментариев"""
-    title_id = models.ForeignKey(
+    title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
         related_name='%(class)s_titles',
@@ -46,7 +46,7 @@ class Review(BaseModel):
 
 class Comment(BaseModel):
     """Комментарии"""
-    review_id = models.ForeignKey(
+    review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
         related_name='comments',
