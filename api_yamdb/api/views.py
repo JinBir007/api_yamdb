@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 
-from rest_framework import mixins, status, viewsets
+from rest_framework import viewsets
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (
@@ -9,10 +9,10 @@ from rest_framework.mixins import (
     RetrieveModelMixin,
     UpdateModelMixin,
 )
-from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
+from rest_framework.pagination import (
+    LimitOffsetPagination, PageNumberPagination)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.serializers import ModelSerializer
 from rest_framework.status import HTTP_200_OK
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -92,8 +92,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         )
 
 
-# раздел классов для работы с пользователями
-
 class UserRegistrationViewSet(CreateModelMixin,
                               GenericViewSet):
     """Регистрация новых пользователей."""
@@ -146,7 +144,7 @@ class RegistrationConfirmation(APIView):
             user = get_object_or_404(User, username=username)
             user_confirmation_code = request.data.get('confirmation_code')
             try:
-                confirmation = EmailConfirmation.objects.get(
+                EmailConfirmation.objects.get(
                     pk=user_confirmation_code,
                     user=user
                 )
@@ -199,8 +197,6 @@ class UserViewSet(ModelViewSet):
         if self.detail and 'POST' in methods:
             methods.remove('POST')
         return methods
-
-# конец раздела классов для работы с пользователями
 
 
 class CategoryViewSet(ModelViewSet):
