@@ -1,28 +1,24 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
 
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import (
-    CreateModelMixin,
-    RetrieveModelMixin,
-    UpdateModelMixin,
-)
+from rest_framework.mixins import CreateModelMixin
 from rest_framework.pagination import (
     LimitOffsetPagination, PageNumberPagination)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from rest_framework_simplejwt.tokens import RefreshToken
-
-from .exceptions import WrongEmail, WrongUsernameOrCode
 from .permissions import (
     IsAdminOrReadOnly,
-    IsUserOrModeratorOrReadOnly,
+    IsAuthorOrModeratorOrAdminOrReadOnly,
     OnlyAdminHasAccess,
 )
 from .serializers import (
@@ -36,10 +32,8 @@ from .serializers import (
     UsersMePatchSerializer,
     UsersSerializer,
 )
-from .utils import send_confirmation_email
 from content.models import Category, Genre, Title
 from reviews.models import Review
-from users.models import EmailConfirmation
 
 User = get_user_model()
 
@@ -48,7 +42,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """Представление отзывов."""
 
     serializer_class = ReviewSerializer
-    permission_classes = (IsUserOrModeratorOrReadOnly,)
+    permission_classes = (IsAuthorOrModeratorOrAdminOrReadOnly,)
     pagination_class = PageNumberPagination
     http_method_names = ('get', 'post', 'patch', 'delete')
 
@@ -66,7 +60,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Представление комментариев."""
 
     serializer_class = CommentSerializer
-    permission_classes = (IsUserOrModeratorOrReadOnly,)
+    permission_classes = (IsAuthorOrModeratorOrAdminOrReadOnly,)
     http_method_names = ('get', 'post', 'patch', 'delete')
 
     def get_queryset(self):
@@ -100,38 +94,11 @@ class UserRegistrationViewSet(CreateModelMixin,
     serializer_class = UserRegistrationSerializer
 
     def create(self, request, *args, **kwargs):
-        username = request.data.get('username')
-        email = request.data.get('email')
-        if User.objects.filter(username=username,
-                               email_confirmed=False).exists():
-            user = User.objects.get(username=username,
-                                    email_confirmed=False)
-            if user.email != email:
-                raise WrongEmail(
-                    'Указан некорректный адрес электроннной почты'
-                )
-            user.delete()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=HTTP_200_OK, headers=headers)
-
-    def perform_create(self, serializer):
-        username = serializer.validated_data.get('username')
-        email = serializer.validated_data.get('email')
-        if not User.objects.filter(username=username).exists():
-            serializer.save()
-        user = get_object_or_404(User, username=username)
-        try:
-            confirmation = EmailConfirmation.objects.get(user=user)
-            confirmation.delete()
-        except Exception:
-            pass
-        confirmation_object = EmailConfirmation.objects.create(
-            user=user)
-        confirmation_code = confirmation_object.id
-        send_confirmation_email(user, confirmation_code, email)
 
 
 class RegistrationConfirmation(APIView):
@@ -142,40 +109,19 @@ class RegistrationConfirmation(APIView):
         if serializer.is_valid():
             username = request.data.get('username')
             user = get_object_or_404(User, username=username)
-            user_confirmation_code = request.data.get('confirmation_code')
-            try:
-                EmailConfirmation.objects.get(
-                    pk=user_confirmation_code,
-                    user=user
-                )
-            except Exception:
-                raise WrongUsernameOrCode
-            user.email_confirmed = True
-            user.save()
-            refresh = RefreshToken.for_user(user)
-            return Response({'token': str(refresh.access_token)},
-                            status=HTTP_200_OK)
+            confirmation_code = request.data.get('confirmation_code')
+            if default_token_generator.check_token(user, confirmation_code):
+                user.email_confirmed = True
+                user.save()
+                access_token = AccessToken.for_user(user)
+                return Response({'token': str(access_token)},
+                                status=HTTP_200_OK)
+            else:
+                return Response('Указаны некорректные данные',
+                                status=HTTP_400_BAD_REQUEST)
         else:
-            raise WrongUsernameOrCode
-
-
-class UsersMeViewSet(GenericViewSet,
-                     UpdateModelMixin,
-                     RetrieveModelMixin):
-    """Получение и изменение информации о текущем пользователе."""
-
-    queryset = User.objects.all()
-    serializer_class = UsersSerializer
-    permission_classes = (IsAuthenticated,)
-
-    def get_object(self):
-        return get_object_or_404(User, pk=self.request.user.pk)
-
-    def get_serializer_class(self):
-        if self.action == 'retrieve':
-            return UsersSerializer
-        else:
-            return UsersMePatchSerializer
+            return Response('Указаны некорректные данные',
+                            status=HTTP_400_BAD_REQUEST)
 
 
 class UserViewSet(ModelViewSet):
@@ -190,13 +136,34 @@ class UserViewSet(ModelViewSet):
     search_fields = ('username',)
     pagination_class = PageNumberPagination
 
-    def _allowed_methods(self):
-        methods = [m.upper() for m in
-                   self.http_method_names if hasattr(self, m)]
-        print(self.detail)
-        if self.detail and 'POST' in methods:
-            methods.remove('POST')
-        return methods
+    def get_permissions(self):
+        if self.action == 'me':
+            return (IsAuthenticated(),)
+        return (OnlyAdminHasAccess(),)
+
+    def get_serializer_class(self):
+        if self.action == 'me':
+            return UsersMePatchSerializer
+        else:
+            return UsersSerializer
+
+    @action(detail=False,
+            methods=('get', 'patch', 'put', 'delete'),
+            url_name='me')
+    def me(self, request):
+        user = request.user
+        if request.method == 'GET':
+            serializer = self.get_serializer(user)
+            return Response(serializer.data)
+        elif request.method == 'PATCH':
+            serializer = self.get_serializer(user,
+                                             data=request.data,
+                                             partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            raise MethodNotAllowed(f'{request.method}')
 
 
 class CategoryViewSet(ModelViewSet):

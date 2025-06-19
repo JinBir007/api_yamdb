@@ -107,3 +107,5 @@ SIMPLE_JWT = {
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+API_EMAIL = 'admin@yamdb.com'
