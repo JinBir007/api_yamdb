@@ -15,8 +15,7 @@ from rest_framework.serializers import (
     ValidationError,
 )
 
-from reviews.models import Comment, Review
-from content.models import Category, Genre, Title
+from reviews.models import Category, Genre, Title, Comment, Review
 from users.constants import (FORBIDDEN_SYMBOLS,
                              MAX_USERNAME_LENGTH,
                              MAX_EMAIL_LENGTH)
