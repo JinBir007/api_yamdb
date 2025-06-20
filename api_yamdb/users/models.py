@@ -1,23 +1,30 @@
-from uuid import uuid4
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-ROLE_CHOICES = (
-    ('user', 'Пользователь'),
-    ('moderator', 'Модератор'),
-    ('admin', 'Админ'),
-)
+from .validators import validate_name
+from .constants import MAX_USERNAME_LENGTH, MAX_EMAIL_LENGTH
+
+
+class RoleChoices(models.TextChoices):
+    USER = 'user', 'Пользователь'
+    MODERATOR = 'moderator', 'Модератор'
+    ADMIN = 'admin', 'Админ'
 
 
 class ApiUser(AbstractUser):
     """Модель пользователя."""
 
-    email = models.EmailField(unique=True, blank=False, null=False)
+    username = models.CharField(
+        max_length=MAX_USERNAME_LENGTH,
+        unique=True,
+        validators=(validate_name,)
+    )
+    email = models.EmailField(max_length=MAX_EMAIL_LENGTH, unique=True)
     email_confirmed = models.BooleanField(default=False)
     bio = models.TextField(verbose_name='Биография', blank=True)
-    role = models.CharField(max_length=12,
-                            choices=ROLE_CHOICES,
-                            default='user',
+    role = models.CharField(max_length=max(map(len, RoleChoices)),
+                            choices=RoleChoices.choices,
+                            default=RoleChoices.USER,
                             verbose_name='Роль')
     REQUIRED_FIELDS = ['email', ]
 
@@ -30,10 +37,10 @@ class ApiUser(AbstractUser):
     def __str__(self):
         return self.username
 
+    @property
+    def is_admin(self):
+        return self.role == RoleChoices.ADMIN
 
-class EmailConfirmation(models.Model):
-    """Модель для кода подтверждения электронной почты."""
-
-    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(ApiUser, on_delete=models.CASCADE)
+    @property
+    def is_moderator(self):
+        return self.role == RoleChoices.MODERATOR

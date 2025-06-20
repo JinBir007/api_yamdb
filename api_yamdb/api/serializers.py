@@ -1,8 +1,13 @@
+from re import sub
+
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.db import IntegrityError
 from django.db.models import Avg
 
 from rest_framework.serializers import (
     CharField,
+    EmailField,
     ModelSerializer,
     Serializer,
     SerializerMethodField,
@@ -12,6 +17,10 @@ from rest_framework.serializers import (
 
 from reviews.models import Comment, Review
 from content.models import Category, Genre, Title
+from users.constants import (FORBIDDEN_SYMBOLS,
+                             MAX_USERNAME_LENGTH,
+                             MAX_EMAIL_LENGTH)
+from .utils import send_confirmation_email
 
 User = get_user_model()
 
@@ -56,32 +65,38 @@ class CommentSerializer(ModelSerializer):
 
 # раздел сериализаторов для классов работы с пользователями
 
-class UserRegistrationSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('username', 'email')
+class UserRegistrationSerializer(Serializer):
+    username = CharField(max_length=MAX_USERNAME_LENGTH, allow_blank=False)
+    email = EmailField(max_length=MAX_EMAIL_LENGTH, allow_blank=False)
 
     def validate_username(self, value):
         if value == 'me':
             raise ValidationError(
                 {'username': ('Недопустимое значение.',)}
             )
+        incorrect_entries = sub(FORBIDDEN_SYMBOLS, '', value)
+        if len(incorrect_entries) > 0:
+            raise ValidationError(f'Недопустимые символы {incorrect_entries}')
         return value
+
+    def create(self, validated_data):
+        username = validated_data.get('username')
+        email = validated_data.get('email')
+        try:
+            user, _ = User.objects.get_or_create(username=username,
+                                                 email=email,
+                                                 email_confirmed=False)
+        except IntegrityError:
+            raise ValidationError('Имя пользователя либо адрес '
+                                  'электронной почты уже используются.')
+        confirmation_token = default_token_generator.make_token(user)
+        send_confirmation_email(user, confirmation_token, email)
+        return user
 
 
 class ConfirmationSerializer(Serializer):
-    username = CharField(max_length=150, allow_blank=False)
-    confirmation_code = CharField(max_length=36, allow_blank=False)
-
-
-class UsersMePatchSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('username',
-                  'email',
-                  'first_name',
-                  'last_name',
-                  'bio',)
+    username = CharField(max_length=MAX_USERNAME_LENGTH, allow_blank=False)
+    confirmation_code = CharField(allow_blank=False)
 
 
 class UsersSerializer(ModelSerializer):
@@ -93,6 +108,12 @@ class UsersSerializer(ModelSerializer):
                   'last_name',
                   'bio',
                   'role')
+
+
+class UsersMePatchSerializer(UsersSerializer):
+    class Meta(UsersSerializer.Meta):
+        read_only_fields = ('role',)
+
 
 # конец раздела сериализаторов для классов работы с пользователями
 
