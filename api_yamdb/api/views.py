@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.pagination import (
     LimitOffsetPagination, PageNumberPagination)
@@ -32,8 +32,7 @@ from .serializers import (
     UsersMePatchSerializer,
     UsersSerializer,
 )
-from content.models import Category, Genre, Title
-from reviews.models import Review
+from reviews.models import Category, Genre, Title, Review
 
 User = get_user_model()
 
@@ -174,8 +173,9 @@ class CategoryViewSet(ModelViewSet):
     lookup_field = 'slug'
     permission_classes = [IsAdminOrReadOnly]
     http_method_names = ('get', 'post', 'delete')
-    filter_backends = [SearchFilter]
+    filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['name']
+    ordering = ['name']
 
     def retrieve(self, request, *args, **kwargs):
         raise MethodNotAllowed('GET')
@@ -189,8 +189,9 @@ class GenreViewSet(ModelViewSet):
     lookup_field = 'slug'
     permission_classes = [IsAdminOrReadOnly]
     http_method_names = ('get', 'post', 'delete')
-    filter_backends = [SearchFilter]
+    filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['name']
+    ordering = ['name']
 
     def retrieve(self, request, *args, **kwargs):
         raise MethodNotAllowed('GET')
