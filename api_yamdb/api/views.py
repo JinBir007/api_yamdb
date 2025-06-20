@@ -1,12 +1,15 @@
+from django.db.models import Avg
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
+
 
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.mixins import CreateModelMixin
+from rest_framework.mixins import (
+    CreateModelMixin, ListModelMixin, DestroyModelMixin)
 from rest_framework.pagination import (
     LimitOffsetPagination, PageNumberPagination)
 from rest_framework.permissions import IsAuthenticated
@@ -16,6 +19,9 @@ from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
+from django_filters.rest_framework import DjangoFilterBackend
+
+from .filters import TitleFilter
 from .permissions import (
     IsAdminOrReadOnly,
     IsAuthorOrModeratorOrAdminOrReadOnly,
@@ -27,7 +33,9 @@ from .serializers import (
     ConfirmationSerializer,
     GenreSerializer,
     ReviewSerializer,
-    TitleSerializer,
+    # TitleSerializer,
+    TitleReadSerializer,
+    TitleWriteSerializer,
     UserRegistrationSerializer,
     UsersMePatchSerializer,
     UsersSerializer,
@@ -165,63 +173,59 @@ class UserViewSet(ModelViewSet):
             raise MethodNotAllowed(f'{request.method}')
 
 
-class CategoryViewSet(ModelViewSet):
-    """ViewSet для модели Category."""""
+class BaseViewSet(CreateModelMixin,
+                  ListModelMixin,
+                  DestroyModelMixin,
+                  GenericViewSet):
+    """Базовый ViewSet для моделей с полями name и slug."""
+
+    permission_classes = [IsAdminOrReadOnly]
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ['name']
+    ordering = ['name']
+    lookup_field = 'slug'
+
+
+class CategoryViewSet(BaseViewSet):
+    """ViewSet для модели Category."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    lookup_field = 'slug'
-    permission_classes = [IsAdminOrReadOnly]
-    http_method_names = ('get', 'post', 'delete')
-    filter_backends = [SearchFilter, OrderingFilter]
-    search_fields = ['name']
-    ordering = ['name']
-
-    def retrieve(self, request, *args, **kwargs):
-        raise MethodNotAllowed('GET')
 
 
-class GenreViewSet(ModelViewSet):
-    """ViewSet для модели Genre."""""
+class GenreViewSet(BaseViewSet):
+    """ViewSet для модели Genre."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    lookup_field = 'slug'
-    permission_classes = [IsAdminOrReadOnly]
-    http_method_names = ('get', 'post', 'delete')
-    filter_backends = [SearchFilter, OrderingFilter]
-    search_fields = ['name']
-    ordering = ['name']
-
-    def retrieve(self, request, *args, **kwargs):
-        raise MethodNotAllowed('GET')
 
 
 class TitleViewSet(ModelViewSet):
     """ViewSet для модели Title."""
 
     queryset = Title.objects.all()
-    serializer_class = TitleSerializer
     pagination_class = LimitOffsetPagination
     permission_classes = [IsAdminOrReadOnly]
     http_method_names = ('get', 'post', 'patch', 'delete')
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+        OrderingFilter
+    ]
+    filterset_class = TitleFilter
     search_fields = ['name']
     ordering_fields = ['name', 'year']
 
+    def get_serializer_class(self):
+        """Возвращает сериализатор в зависимости от действия."""
+        if self.action in ['list', 'retrieve']:
+            return TitleReadSerializer
+        return TitleWriteSerializer
+
     def get_queryset(self):
         queryset = super().get_queryset()
-        if self.action == 'list':
-            genre = self.request.query_params.get('genre', None)
-            category = self.request.query_params.get('category', None)
-            year = self.request.query_params.get('year', None)
-            name = self.request.query_params.get('name', None)
-
-            if genre is not None:
-                queryset = queryset.filter(genre__slug=genre)
-            if category is not None:
-                queryset = queryset.filter(category__slug=category)
-            if year is not None:
-                queryset = queryset.filter(year=year)
-            if name is not None:
-                queryset = queryset.filter(name=name)
+        if self.action in ['list', 'retrieve']:
+            queryset = queryset.annotate(
+                rating=Avg('review_titles__score')
+            )
         return queryset

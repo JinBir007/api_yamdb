@@ -3,14 +3,13 @@ from re import sub
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError
-from django.db.models import Avg
 
+from rest_framework.fields import IntegerField
 from rest_framework.serializers import (
     CharField,
     EmailField,
     ModelSerializer,
     Serializer,
-    SerializerMethodField,
     SlugRelatedField,
     ValidationError,
 )
@@ -132,53 +131,38 @@ class GenreSerializer(ModelSerializer):
         model = Genre
 
 
-class TitleSerializer(ModelSerializer):
-    """Сериализатор для модели Title."""
+class TitleWriteSerializer(ModelSerializer):
+    """Сериализатор для записи (создания и обновления) модели Title."""
 
-    rating = SerializerMethodField(read_only=True)
     category = SlugRelatedField(
         queryset=Category.objects.all(),
         slug_field='slug',
-        write_only=True
+        write_only=True,
+        required=False
     )
     genre = SlugRelatedField(
         many=True,
         queryset=Genre.objects.all(),
         slug_field='slug',
-        write_only=True
+        write_only=True,
+        allow_null=False,
+        allow_empty=False,
     )
-    category_data = CategorySerializer(source='category', read_only=True)
-    genre_data = GenreSerializer(source='genre', many=True, read_only=True)
+
+    class Meta:
+        model = Title
+        fields = ['id', 'name', 'year', 'description', 'genre', 'category']
+
+
+class TitleReadSerializer(ModelSerializer):
+    """Сериализатор для чтения (получения) модели Title."""
+
+    rating = IntegerField(read_only=True, default=None)
+    category = CategorySerializer(read_only=True)
+    genre = GenreSerializer(many=True, read_only=True)
 
     class Meta:
         model = Title
         fields = [
-            'id', 'name', 'year', 'description', 'genre', 'genre_data',
-            'category', 'category_data', 'rating'
+            'id', 'name', 'year', 'description', 'genre', 'category', 'rating'
         ]
-        read_only_fields = ['rating', 'genre_data', 'category_data']
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        category_data = representation.pop('category_data', None)
-        if category_data:
-            representation['category'] = category_data
-
-        genre_data = representation.pop('genre_data', None)
-        if genre_data:
-            representation['genre'] = genre_data
-        return representation
-
-    def get_rating(self, obj):
-        """Функция рассчитывает средний рейтинг из оценок."""
-        result = Review.objects.filter(title_id=obj.id).aggregate(Avg('score'))
-        if result['score__avg'] is not None:
-            return result['score__avg']
-        else:
-            return None
-
-    def create(self, validated_data):
-        genres = validated_data.pop('genre', [])
-        title = Title.objects.create(**validated_data)
-        title.genre.set(genres)
-        return title
