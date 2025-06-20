@@ -33,21 +33,20 @@ class ReviewSerializer(ModelSerializer):
         slug_field='username'
     )
 
-    def validate(self, attrs):
-        request = self.context.get('request')
-        if request.method == 'POST':
-            author = request.user
-            if Review.objects.filter(
-                author=author,
-                title_id=self.context.get('view').kwargs.get('title_id')
-            ).exists():
-                raise ValidationError(
-                    'Нельзя создать повторный отзыв на это произведение')
-        return attrs
-
     class Meta:
         model = Review
         fields = ('id', 'author', 'text', 'score', 'pub_date')
+
+    def validate(self, attrs):
+        """Проверка на повторный отзыв"""
+        request = self.context.get('request')
+        if Review.objects.filter(
+            author=request.user,
+            title_id=self.context.get('view').kwargs.get('title_id')
+        ).exists() and request.method == 'POST':
+            raise ValidationError(
+                'Нельзя создать повторный отзыв на это произведение')
+        return attrs
 
 
 class CommentSerializer(ModelSerializer):
