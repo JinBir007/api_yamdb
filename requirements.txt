@@ -4,9 +4,9 @@ certifi==2021.5.30
 chardet==4.0.0
 charset-normalizer==2.0.4
 django==3.2.23
-django-extensions==3.1.3  # Совместимость с Django 3.2
-djangorestframework==3.12.4  # Последняя версия, совместимая с Django 3.2
-djangorestframework_simplejwt==4.8.0  # Совместимость с DRF 3.12
+django-extensions==3.1.3
+djangorestframework==3.12.4
+djangorestframework_simplejwt==4.8.0
 idna==2.10
 iniconfig==1.1.1
 packaging==20.9

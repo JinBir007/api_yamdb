@@ -53,14 +53,21 @@ class ReviewViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
     http_method_names = ('get', 'post', 'patch', 'delete')
 
+    def get_title(self):
+        """Получение объекта произведения."""""
+        return get_object_or_404(Title, id=self.kwargs.get('title_id'))
+
     def get_queryset(self):
-        title_id = self.kwargs.get('title_id')
-        return Review.objects.filter(title_id=title_id)
+        """Получение списка отзывов."""
+        title = self.get_title()
+        return getattr(
+            title,
+            f'{self.__class__.__name__.lower().replace("viewset", "")}_titles'
+        ).all()
 
     def perform_create(self, serializer):
-        title_id = self.kwargs.get('title_id')
-        title = get_object_or_404(Title, id=title_id)
-        serializer.save(author=self.request.user, title=title)
+        """Создание нового отзыва."""
+        serializer.save(author=self.request.user, title=self.get_title())
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -70,26 +77,24 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthorOrModeratorOrAdminOrReadOnly,)
     http_method_names = ('get', 'post', 'patch', 'delete')
 
+    def get_review(self):
+        """Получение объекта отзыва."""
+        review = self.kwargs.get('review_id')
+        title = self.kwargs.get('title_id')
+        return get_object_or_404(Review, id=review, title_id=title)
+
     def get_queryset(self):
-        review = get_object_or_404(
-            Review,
-            pk=self.kwargs.get('review_id')
-        )
-        return review.comments.all().order_by('id')
+        """Получение списка комментариев."""
+        review = self.get_review()
+        return review.comments.all()
 
     def perform_create(self, serializer):
-        review = get_object_or_404(
-            Review,
-            pk=self.kwargs.get('review_id')
-        )
-        title = get_object_or_404(
-            Title,
-            pk=self.kwargs.get('title_id')
-        )
+        """Создание нового комментария."""
+        review = self.get_review()
         serializer.save(
-            title=title,
             author=self.request.user,
             review=review,
+            title=review.title
         )
 
 
