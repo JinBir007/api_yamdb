@@ -39,7 +39,9 @@ class ApiUser(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == RoleChoices.ADMIN
+        return (self.role == RoleChoices.ADMIN
+                or self.is_staff
+                or self.is_superuser)
 
     @property
     def is_moderator(self):
