@@ -5,6 +5,7 @@ from django.core.validators import MaxValueValidator
 from django.db import models
 
 from .constants import MAX_LENGTH_NAME, MAX_LENGTH_SLUG
+from .validators import validate_year
 
 User = get_user_model()
 
@@ -54,9 +55,9 @@ class Title(models.Model):
         max_length=MAX_LENGTH_NAME,
         verbose_name='Название'
     )
-    year = models.PositiveSmallIntegerField(
+    year = models.SmallIntegerField(
         verbose_name='Год',
-        validators=[MaxValueValidator(datetime.datetime.now().year)]
+        validators=[validate_year]
     )
     description = models.TextField(
         blank=True,
