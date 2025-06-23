@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+from .validators import validate_year
 from .constants import (
     MAX_LENGTH_NAME, MAX_LENGTH_SLUG, SHORT_TEXT, MAX_POINTS, MIN_POINTS)
 
@@ -55,9 +56,9 @@ class Title(models.Model):
         max_length=MAX_LENGTH_NAME,
         verbose_name='Название'
     )
-    year = models.PositiveSmallIntegerField(
+    year = models.SmallIntegerField(
         verbose_name='Год',
-        validators=[MaxValueValidator(datetime.datetime.now().year)]
+        validators=[validate_year]
     )
     description = models.TextField(
         blank=True,

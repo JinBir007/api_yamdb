@@ -156,6 +156,10 @@ class TitleWriteSerializer(ModelSerializer):
         model = Title
         fields = ['id', 'name', 'year', 'description', 'genre', 'category']
 
+    def to_representation(self, instance):
+        """Преобразует объект в представление для чтения."""
+        return TitleReadSerializer(instance, context=self.context).data
+
 
 class TitleReadSerializer(ModelSerializer):
     """Сериализатор для чтения (получения) модели Title."""

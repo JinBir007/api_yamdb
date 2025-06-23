@@ -186,7 +186,9 @@ class GenreViewSet(BaseViewSet):
 class TitleViewSet(ModelViewSet):
     """ViewSet для модели Title."""
 
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(
+        rating=Avg('review_titles__score')
+    ).all()
     pagination_class = LimitOffsetPagination
     permission_classes = [IsAdminOrReadOnly]
     http_method_names = ('get', 'post', 'patch', 'delete')
@@ -204,11 +206,3 @@ class TitleViewSet(ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return TitleReadSerializer
         return TitleWriteSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if self.action in ['list', 'retrieve']:
-            queryset = queryset.annotate(
-                rating=Avg('review_titles__score')
-            )
-        return queryset
