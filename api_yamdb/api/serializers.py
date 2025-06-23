@@ -59,7 +59,6 @@ class CommentSerializer(ModelSerializer):
         fields = ('id', 'text', 'author', 'pub_date',)
 
 
-
 class UserRegistrationSerializer(Serializer):
     username = CharField(max_length=MAX_USERNAME_LENGTH,
                          allow_blank=False,
