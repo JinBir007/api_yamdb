@@ -10,7 +10,6 @@ from .views import (
     ReviewViewSet,
     TitleViewSet,
     UserRegistrationViewSet,
-    # UsersMeViewSet,
     UserViewSet,
 )
 

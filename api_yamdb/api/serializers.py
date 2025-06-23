@@ -3,7 +3,6 @@ from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 
-from pkg_resources import require
 from rest_framework.fields import IntegerField
 from rest_framework.serializers import (
     CharField,
@@ -14,7 +13,6 @@ from rest_framework.serializers import (
     ValidationError,
 )
 
-# from api_yamdb.users import validators
 from reviews.models import Category, Genre, Title, Comment, Review
 from users.constants import (MAX_USERNAME_LENGTH,
                              MAX_EMAIL_LENGTH)
@@ -61,7 +59,6 @@ class CommentSerializer(ModelSerializer):
         fields = ('id', 'text', 'author', 'pub_date',)
 
 
-# раздел сериализаторов для классов работы с пользователями
 
 class UserRegistrationSerializer(Serializer):
     username = CharField(max_length=MAX_USERNAME_LENGTH,
@@ -113,9 +110,6 @@ class UsersSerializer(ModelSerializer):
 class UsersMePatchSerializer(UsersSerializer):
     class Meta(UsersSerializer.Meta):
         read_only_fields = ('role',)
-
-
-# конец раздела сериализаторов для классов работы с пользователями
 
 
 class CategorySerializer(ModelSerializer):
