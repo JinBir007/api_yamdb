@@ -1,12 +1,10 @@
 from django.db.models import Avg
 from django.contrib.auth import get_user_model
-from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
 
 
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.mixins import (
     CreateModelMixin, ListModelMixin, DestroyModelMixin)
@@ -15,7 +13,7 @@ from rest_framework.pagination import (
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_200_OK
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
@@ -118,22 +116,14 @@ class RegistrationConfirmation(APIView):
 
     def post(self, request):
         serializer = ConfirmationSerializer(data=request.data)
-        if serializer.is_valid():
-            username = request.data.get('username')
-            user = get_object_or_404(User, username=username)
-            confirmation_code = request.data.get('confirmation_code')
-            if default_token_generator.check_token(user, confirmation_code):
-                user.email_confirmed = True
-                user.save()
-                access_token = AccessToken.for_user(user)
-                return Response({'token': str(access_token)},
-                                status=HTTP_200_OK)
-            else:
-                return Response('Указаны некорректные данные',
-                                status=HTTP_400_BAD_REQUEST)
-        else:
-            return Response('Указаны некорректные данные',
-                            status=HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        username = request.data.get('username')
+        user = get_object_or_404(User, username=username)
+        user.email_confirmed = True
+        user.save()
+        access_token = AccessToken.for_user(user)
+        return Response({'token': str(access_token)},
+                        status=HTTP_200_OK)
 
 
 class UserViewSet(ModelViewSet):
@@ -148,34 +138,22 @@ class UserViewSet(ModelViewSet):
     search_fields = ('username',)
     pagination_class = PageNumberPagination
 
-    def get_permissions(self):
-        if self.action == 'me':
-            return (IsAuthenticated(),)
-        return (OnlyAdminHasAccess(),)
-
-    def get_serializer_class(self):
-        if self.action == 'me':
-            return UsersMePatchSerializer
-        else:
-            return UsersSerializer
-
     @action(detail=False,
-            methods=('get', 'patch', 'put', 'delete'),
-            url_name='me')
+            methods=('get', 'patch',),
+            url_name='me',
+            permission_classes=(IsAuthenticated,),
+            serializer_class=UsersMePatchSerializer)
     def me(self, request):
         user = request.user
         if request.method == 'GET':
             serializer = self.get_serializer(user)
             return Response(serializer.data)
-        elif request.method == 'PATCH':
-            serializer = self.get_serializer(user,
-                                             data=request.data,
-                                             partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data)
-        else:
-            raise MethodNotAllowed(f'{request.method}')
+        serializer = self.get_serializer(user,
+                                         data=request.data,
+                                         partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 class BaseViewSet(CreateModelMixin,
