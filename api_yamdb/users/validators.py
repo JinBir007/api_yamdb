@@ -11,3 +11,4 @@ def validate_name(value):
     incorrect_entries = sub(FORBIDDEN_SYMBOLS, '', value)
     if len(incorrect_entries) > 0:
         raise ValidationError(f'Недопустимые символы {incorrect_entries}')
+    return value

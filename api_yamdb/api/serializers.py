@@ -1,9 +1,9 @@
-from re import sub
-
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError
+from django.shortcuts import get_object_or_404
 
+from pkg_resources import require
 from rest_framework.fields import IntegerField
 from rest_framework.serializers import (
     CharField,
@@ -14,10 +14,11 @@ from rest_framework.serializers import (
     ValidationError,
 )
 
+# from api_yamdb.users import validators
 from reviews.models import Category, Genre, Title, Comment, Review
-from users.constants import (FORBIDDEN_SYMBOLS,
-                             MAX_USERNAME_LENGTH,
+from users.constants import (MAX_USERNAME_LENGTH,
                              MAX_EMAIL_LENGTH)
+from users.validators import validate_name
 from .utils import send_confirmation_email
 
 User = get_user_model()
@@ -63,21 +64,13 @@ class CommentSerializer(ModelSerializer):
 # раздел сериализаторов для классов работы с пользователями
 
 class UserRegistrationSerializer(Serializer):
-    username = CharField(max_length=MAX_USERNAME_LENGTH, allow_blank=False)
+    username = CharField(max_length=MAX_USERNAME_LENGTH,
+                         allow_blank=False,
+                         validators=(validate_name,))
     email = EmailField(max_length=MAX_EMAIL_LENGTH, allow_blank=False)
 
-    def validate_username(self, value):
-        if value == 'me':
-            raise ValidationError(
-                {'username': ('Недопустимое значение.',)}
-            )
-        incorrect_entries = sub(FORBIDDEN_SYMBOLS, '', value)
-        if len(incorrect_entries) > 0:
-            raise ValidationError(f'Недопустимые символы {incorrect_entries}')
-        return value
-
     def create(self, validated_data):
-        username = validated_data.get('username')
+        username = validated_data.get('username',)
         email = validated_data.get('email')
         try:
             user, _ = User.objects.get_or_create(username=username,
@@ -94,6 +87,16 @@ class UserRegistrationSerializer(Serializer):
 class ConfirmationSerializer(Serializer):
     username = CharField(max_length=MAX_USERNAME_LENGTH, allow_blank=False)
     confirmation_code = CharField(allow_blank=False)
+
+    def validate_confirmation_code(self, value):
+        username = self.initial_data.get('username')
+        if username is None:
+            raise ValidationError('Указаны некорректные данные.')
+        user = get_object_or_404(User, username=username)
+        if default_token_generator.check_token(user, value):
+            return value
+        else:
+            raise ValidationError('Указаны некорректные данные.')
 
 
 class UsersSerializer(ModelSerializer):

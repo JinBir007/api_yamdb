@@ -1,11 +1,12 @@
 import datetime
 
 from django.contrib.auth import get_user_model
-from django.core.validators import MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from .constants import MAX_LENGTH_NAME, MAX_LENGTH_SLUG
 from .validators import validate_year
+from .constants import (
+    MAX_LENGTH_NAME, MAX_LENGTH_SLUG, SHORT_TEXT, MAX_POINTS, MIN_POINTS)
 
 User = get_user_model()
 
@@ -109,7 +110,10 @@ class Review(BaseModel):
     """Отзывы."""
 
     score = models.PositiveSmallIntegerField(
-        validators=[MaxValueValidator(10)], verbose_name='Оценка')
+        validators=[
+            MinValueValidator(MIN_POINTS),
+            MaxValueValidator(MAX_POINTS)],
+        verbose_name='Оценка')
 
     class Meta:
         ordering = ('-pub_date',)
@@ -122,7 +126,7 @@ class Review(BaseModel):
         ]
 
     def __str__(self) -> str:
-        return self.text[:50]
+        return self.text[:SHORT_TEXT]
 
 
 class Comment(BaseModel):
@@ -140,4 +144,4 @@ class Comment(BaseModel):
         verbose_name_plural = 'Комментарии'
 
     def __str__(self) -> str:
-        return self.text[:50]
+        return self.text[:SHORT_TEXT]
