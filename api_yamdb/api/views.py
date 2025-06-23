@@ -1,9 +1,7 @@
 from django.db.models import Avg
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-
-
-from rest_framework import viewsets
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.mixins import (
@@ -17,8 +15,6 @@ from rest_framework.status import HTTP_200_OK
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from django_filters.rest_framework import DjangoFilterBackend
-
 from .filters import TitleFilter
 from .permissions import (
     IsAdminOrReadOnly,
@@ -31,7 +27,6 @@ from .serializers import (
     ConfirmationSerializer,
     GenreSerializer,
     ReviewSerializer,
-    # TitleSerializer,
     TitleReadSerializer,
     TitleWriteSerializer,
     UserRegistrationSerializer,
@@ -43,7 +38,7 @@ from reviews.models import Category, Genre, Title, Review
 User = get_user_model()
 
 
-class ReviewViewSet(viewsets.ModelViewSet):
+class ReviewViewSet(ModelViewSet):
     """Представление отзывов."""
 
     serializer_class = ReviewSerializer
@@ -58,17 +53,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Получение списка отзывов."""
         title = self.get_title()
-        return getattr(
-            title,
-            f'{self.__class__.__name__.lower().replace("viewset", "")}_titles'
-        ).all()
+        return title.review_titles.all()
 
     def perform_create(self, serializer):
         """Создание нового отзыва."""
         serializer.save(author=self.request.user, title=self.get_title())
 
 
-class CommentViewSet(viewsets.ModelViewSet):
+class CommentViewSet(ModelViewSet):
     """Представление комментариев."""
 
     serializer_class = CommentSerializer
