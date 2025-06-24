@@ -34,6 +34,8 @@ from .serializers import (
     UsersSerializer,
 )
 from reviews.models import Category, Genre, Title, Review
+from .base_viewsets import BaseViewSet
+
 
 User = get_user_model()
 
@@ -146,19 +148,6 @@ class UserViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
-
-
-class BaseViewSet(CreateModelMixin,
-                  ListModelMixin,
-                  DestroyModelMixin,
-                  GenericViewSet):
-    """Базовый ViewSet для моделей с полями name и slug."""
-
-    permission_classes = [IsAdminOrReadOnly]
-    filter_backends = [SearchFilter, OrderingFilter]
-    search_fields = ['name']
-    ordering = ['name']
-    lookup_field = 'slug'
 
 
 class CategoryViewSet(BaseViewSet):
