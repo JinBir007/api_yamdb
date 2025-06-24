@@ -81,16 +81,16 @@ class UserRegistrationSerializer(Serializer):
 
 
 class ConfirmationSerializer(Serializer):
-    username = CharField(max_length=MAX_USERNAME_LENGTH, allow_blank=False)
+    username = CharField(max_length=MAX_USERNAME_LENGTH,
+                         allow_blank=False)
     confirmation_code = CharField(allow_blank=False)
 
-    def validate_confirmation_code(self, value):
-        username = self.initial_data.get('username')
-        if username is None:
-            raise ValidationError('Указаны некорректные данные.')
+    def validate(self, attrs):
+        username = attrs.get('username')
+        confirmation_code = attrs.get('confirmation_code')
         user = get_object_or_404(User, username=username)
-        if default_token_generator.check_token(user, value):
-            return value
+        if default_token_generator.check_token(user, confirmation_code):
+            return attrs
         else:
             raise ValidationError('Указаны некорректные данные.')
 
