@@ -34,7 +34,7 @@ class NamedSlugModel(models.Model):
 class Category(NamedSlugModel):
     """Категория."""
 
-    class Meta:
+    class Meta(NamedSlugModel.Meta):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
@@ -42,7 +42,7 @@ class Category(NamedSlugModel):
 class Genre(NamedSlugModel):
     """Жанр."""
 
-    class Meta:
+    class Meta(NamedSlugModel.Meta):
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
