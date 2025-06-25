@@ -4,8 +4,7 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.mixins import (
-    CreateModelMixin, ListModelMixin, DestroyModelMixin)
+from rest_framework.mixins import CreateModelMixin
 from rest_framework.pagination import (
     LimitOffsetPagination, PageNumberPagination)
 from rest_framework.permissions import IsAuthenticated
