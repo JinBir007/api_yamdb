@@ -91,8 +91,7 @@ class ConfirmationSerializer(Serializer):
         user = get_object_or_404(User, username=username)
         if default_token_generator.check_token(user, confirmation_code):
             return attrs
-        else:
-            raise ValidationError('Указаны некорректные данные.')
+        raise ValidationError('Указаны некорректные данные.')
 
 
 class UsersSerializer(ModelSerializer):
